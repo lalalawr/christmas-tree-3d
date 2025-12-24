@@ -1,37 +1,48 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <title>3D Magical Christmas Tree</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- Three.js -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
-  <!-- MediaPipe Hands -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ice Queen Magic Christmas Tree ✨</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 引入字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@300;500&display=swap" rel="stylesheet">
 </head>
-
 <body>
-  <div id="ui">
-    <h1>🎄 3D Magical Christmas Tree</h1>
-    <input id="nameInput" placeholder="输入你的名字" />
-    <div id="blessing">✨ Merry Christmas ✨</div>
 
-    <div class="buttons">
-      <button id="gestureBtn">🎥 手势魔法</button>
-      <button id="shotBtn">📸 保存圣诞树</button>
+    <!-- 加载遮罩层 -->
+    <div class="loading-overlay" id="loading-screen">
+        <div class="spinner"></div>
+        <button class="btn-start" id="start-btn">唤醒冰雪圣诞魔法 ❄️</button>
     </div>
-  </div>
 
-  <audio id="bgm" src="music.mp3" loop></audio>
+    <!-- 3D 渲染容器 -->
+    <div id="canvas-container"></div>
 
-  <video id="video" style="display:none" playsinline></video>
+    <!-- UI 交互层 -->
+    <div id="ui-layer">
+        <div class="greeting-card" id="main-card">
+            <input type="text" id="name-input" placeholder="输入你的名字..." maxlength="10">
+            <div class="message" id="greeting-text"></div>
+        </div>
 
-  <script src="script.js"></script>
+        <div class="controls">
+            <div class="gesture-info">
+                <div id="gesture-status">等待魔法手势...</div>
+                <div class="cam-wrapper">
+                    <video id="webcam" autoplay playsinline></video>
+                </div>
+            </div>
+            <div class="hint-text">
+                ✊ 握拳聚能 / ✋ 张开爆炸<br>
+                视觉参考：冰雪螺旋上升风格
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入 Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- 引入核心逻辑 -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
-
