@@ -1,217 +1,206 @@
-let scene, camera, renderer, composer;
-let tree, star, snow;
-let spread = 1;
+/**
+ * 圣诞树核心交互逻辑
+ */
 
-init();
-createTree();
-createStar();
-createSnow();
-animate();
+// --- 变量定义 ---
+let scene, camera, renderer, particles, star, snowflakes;
+const particleCount = 6000;
+const colors = [0xff4d6d, 0xffcfdf, 0xffd700, 0x00ff88, 0x00d2ff, 0xbd93f9];
+let currentThemeIndex = 0;
+let expansionFactor = 1.0;
 
-/* =====================
-   Three.js 初始化
-===================== */
+// --- 初始化函数 ---
 function init() {
-  scene = new THREE.Scene();
+    initThree();
+    setupEventListeners();
+}
 
-  camera = new THREE.PerspectiveCamera(
-    60,
-    window.innerWidth / window.innerHeight,
-    1,
-    1000
-  );
-  camera.position.z = 320;
+function initThree() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 5;
 
-  renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    preserveDrawingBuffer: true
-  });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-  // Bloom 后期
-  composer = new THREE.EffectComposer(renderer);
-  composer.addPass(new THREE.RenderPass(scene, camera));
+    createTree();
+    createStar();
+    createSnow();
 
-  const bloom = new THREE.UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    1.2,
-    0.6,
-    0.15
-  );
-  composer.addPass(bloom);
+    animate();
+    document.getElementById('loader').style.display = 'none';
+}
 
-  window.addEventListener("resize", () => {
+// --- 圣诞树构建 ---
+function createTree() {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const pColors = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount; i++) {
+        const r = Math.pow(Math.random(), 1.5) * 2;
+        const theta = Math.random() * 2 * Math.PI;
+        const h = Math.random() * 4 - 2;
+        const currentRadius = r * (1 - (h + 2) / 4.5);
+        
+        positions[i * 3] = Math.cos(theta) * currentRadius;
+        positions[i * 3 + 1] = h;
+        positions[i * 3 + 2] = Math.sin(theta) * currentRadius;
+
+        const color = new THREE.Color(colors[Math.floor(Math.random() * colors.length)]);
+        pColors[i * 3] = color.r;
+        pColors[i * 3 + 1] = color.g;
+        pColors[i * 3 + 2] = color.b;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(pColors, 3));
+    
+    const material = new THREE.PointsMaterial({
+        size: 0.04,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
+    });
+
+    particles = new THREE.Points(geometry, material);
+    scene.add(particles);
+}
+
+function createStar() {
+    const geometry = new THREE.SphereGeometry(0.15, 16, 16);
+    const material = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+    star = new THREE.Mesh(geometry, material);
+    star.position.y = 2.1;
+    scene.add(star);
+}
+
+function createSnow() {
+    const snowGeo = new THREE.BufferGeometry();
+    const snowPos = new Float32Array(3000);
+    for(let i=0; i<3000; i++) { snowPos[i] = (Math.random() - 0.5) * 10; }
+    snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+    snowflakes = new THREE.Points(snowGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.02 }));
+    scene.add(snowflakes);
+}
+
+// --- 交互功能 ---
+function setupEventListeners() {
+    const nameInput = document.getElementById('nameInput');
+    const wishDisplay = document.getElementById('wishDisplay');
+    const startBtn = document.getElementById('startCamera');
+    const bgm = document.getElementById('bgm');
+
+    // 名字输入响应
+    nameInput.addEventListener('input', (e) => {
+        const name = e.target.value.trim();
+        wishDisplay.innerText = name ? `🎄 Merry Christmas, ${name}！` : `🎄 Merry Christmas!`;
+    });
+
+    // 启动摄像头、音乐和手势识别
+    startBtn.addEventListener('click', () => {
+        // 尝试播放音乐 (兼容移动端静音策略)
+        bgm.play().catch(e => {
+            console.log("需要用户交互才能播放音乐，正在切换备用链接...");
+            bgm.src = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"; 
+            bgm.play();
+        });
+
+        initGesture();
+        startBtn.innerText = "✨ 正在享受魔法";
+        startBtn.disabled = true;
+        startBtn.style.opacity = "0.5";
+    });
+}
+
+// --- 手势识别 ---
+async function initGesture() {
+    const videoElement = document.getElementById('webcam');
+    const hint = document.getElementById('gesture-hint');
+    const hands = new Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.7
+    });
+
+    let lastX = 0;
+    hands.onResults((results) => {
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            const landmarks = results.multiHandLandmarks[0];
+            const indexFingerTip = landmarks[8];
+            const wrist = landmarks[0];
+            const distance = Math.sqrt(Math.pow(indexFingerTip.x - wrist.x, 2) + Math.pow(indexFingerTip.y - wrist.y, 2));
+
+            // 张开/握拳判定
+            if (distance > 0.4) {
+                expansionFactor = 2.5;
+                hint.innerText = "✋ 绽放：灵感迸发！";
+            } else {
+                expansionFactor = 0.5;
+                hint.innerText = "✊ 聚合：温暖凝聚";
+            }
+
+            // 挥手判定
+            if (Math.abs(indexFingerTip.x - lastX) > 0.15) {
+                changeTheme();
+                hint.innerText = "👉 变色：换一种心情";
+            }
+            lastX = indexFingerTip.x;
+            hint.style.opacity = 1;
+        } else {
+            expansionFactor = 1.0;
+            hint.style.opacity = 0;
+        }
+    });
+
+    const cameraProvider = new Camera(videoElement, {
+        onFrame: async () => { await hands.send({image: videoElement}); },
+        width: 640, height: 480
+    });
+    cameraProvider.start();
+}
+
+function changeTheme() {
+    currentThemeIndex = (currentThemeIndex + 1) % colors.length;
+    const colorAttr = particles.geometry.attributes.color;
+    const targetColor = new THREE.Color(colors[currentThemeIndex]);
+    for (let i = 0; i < particleCount; i++) {
+        if(Math.random() > 0.3) {
+            colorAttr.array[i * 3] = targetColor.r;
+            colorAttr.array[i * 3 + 1] = targetColor.g;
+            colorAttr.array[i * 3 + 2] = targetColor.b;
+        }
+    }
+    colorAttr.needsUpdate = true;
+}
+
+// --- 渲染循环 ---
+function animate() {
+    requestAnimationFrame(animate);
+    const time = Date.now() * 0.001;
+    
+    particles.rotation.y += 0.005;
+    particles.scale.lerp(new THREE.Vector3(expansionFactor, expansionFactor, expansionFactor), 0.1);
+    
+    star.scale.setScalar(1 + Math.sin(time * 3) * 0.1);
+    snowflakes.position.y -= 0.01;
+    if (snowflakes.position.y < -5) snowflakes.position.y = 5;
+
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    composer.setSize(window.innerWidth, window.innerHeight);
-  });
-}
+});
 
-/* =====================
-   冰蓝螺旋能量树
-===================== */
-function createTree() {
-  const geo = new THREE.BufferGeometry();
-  const count = 6000;
-
-  const pos = [];
-  const col = [];
-
-  for (let i = 0; i < count; i++) {
-    const t = i / count;
-    const angle = t * Math.PI * 22;
-    const radius = (1 - t) * 100;
-
-    pos.push(
-      Math.cos(angle) * radius,
-      t * 240 - 120,
-      Math.sin(angle) * radius
-    );
-
-    const c = new THREE.Color();
-    c.setHSL(0.55 + Math.random() * 0.05, 0.6, 0.6 + Math.random() * 0.25);
-    col.push(c.r, c.g, c.b);
-  }
-
-  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-  geo.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
-
-  const mat = new THREE.PointsMaterial({
-    size: 2,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.75,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-  });
-
-  tree = new THREE.Points(geo, mat);
-  scene.add(tree);
-}
-
-/* =====================
-   树顶星
-===================== */
-function createStar() {
-  const geo = new THREE.SphereGeometry(7, 32, 32);
-  const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  star = new THREE.Mesh(geo, mat);
-  star.position.y = 125;
-  scene.add(star);
-}
-
-/* =====================
-   远景雪花
-===================== */
-function createSnow() {
-  const geo = new THREE.BufferGeometry();
-  const count = 1500;
-  const pos = [];
-
-  for (let i = 0; i < count; i++) {
-    pos.push(
-      (Math.random() - 0.5) * 800,
-      Math.random() * 600 - 200,
-      (Math.random() - 0.5) * 800
-    );
-  }
-
-  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-
-  const mat = new THREE.PointsMaterial({
-    size: 1,
-    color: 0xffffff,
-    transparent: true,
-    opacity: 0.35
-  });
-
-  snow = new THREE.Points(geo, mat);
-  scene.add(snow);
-}
-
-/* =====================
-   动画
-===================== */
-function animate() {
-  tree.rotation.y += 0.0015;
-  tree.scale.set(spread, spread, spread);
-
-  snow.rotation.y += 0.0003;
-
-  const t = Date.now() * 0.003;
-  star.scale.setScalar(1 + Math.sin(t) * 0.35);
-
-  composer.render();
-  requestAnimationFrame(animate);
-}
-
-/* =====================
-   名字祝福
-===================== */
-const nameInput = document.getElementById("nameInput");
-const blessing = document.getElementById("blessing");
-
-nameInput.oninput = () => {
-  const n = nameInput.value.trim();
-  blessing.innerHTML = n
-    ? `🎄 Merry Christmas, <b>${n}</b> ✨`
-    : "✨ 愿你的世界永远闪闪发光 ✨";
-};
-
-/* =====================
-   手势 + 音乐
-===================== */
-const bgm = document.getElementById("bgm");
-const gestureBtn = document.getElementById("gestureBtn");
-const video = document.getElementById("video");
-
-gestureBtn.onclick = () => {
-  bgm.volume = 0.3;
-  bgm.play();
-
-  const hands = new Hands({
-    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
-  });
-
-  hands.setOptions({
-    maxNumHands: 1,
-    minDetectionConfidence: 0.7,
-    minTrackingConfidence: 0.7
-  });
-
-  hands.onResults(res => {
-    if (!res.multiHandLandmarks) return;
-    const lm = res.multiHandLandmarks[0];
-    const d = Math.abs(lm[0].y - lm[8].y);
-
-    if (d > 0.18) {
-      spread = Math.min(spread + 0.02, 1.5);
-      bgm.volume = Math.min(bgm.volume + 0.02, 1);
-    } else {
-      spread = Math.max(spread - 0.02, 0.8);
-      bgm.volume = Math.max(bgm.volume - 0.02, 0.1);
-    }
-  });
-
-  const cam = new Camera(video, {
-    onFrame: async () => await hands.send({ image: video }),
-    width: 640,
-    height: 480
-  });
-  cam.start();
-
-  gestureBtn.innerText = "✨ 手势魔法已开启";
-  gestureBtn.disabled = true;
-};
-
-/* =====================
-   截图保存
-===================== */
-document.getElementById("shotBtn").onclick = () => {
-  const a = document.createElement("a");
-  a.download = "My_Ice_Blue_Christmas_Tree.png";
-  a.href = renderer.domElement.toDataURL("image/png");
-  a.click();
-};
+window.onload = init;
