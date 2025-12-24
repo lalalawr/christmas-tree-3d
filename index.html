@@ -58,6 +58,8 @@
             border-radius: 20px;
             padding: 1.5rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            /* 添加过渡效果，让消失更平滑 */
+            transition: opacity 2s ease, transform 2.5s ease, filter 2s ease;
         }
 
         .wish-text {
@@ -72,11 +74,11 @@
             color: rgba(255, 255, 255, 0.5);
         }
         
-        /* 针对自动消失的样式 */
+        /* 【修改部分】定义消失的动画样式 */
         .ui-fade-out {
             opacity: 0 !important;
-            transform: translateY(-30px);
-            filter: blur(10px);
+            transform: translateY(-40px);
+            filter: blur(15px);
             pointer-events: none !important;
         }
         
@@ -161,7 +163,8 @@
     <div class="overlay-ui">
         <!-- 顶部：输入与祝福 -->
         <div class="w-full max-w-md pointer-events-auto">
-            <div class="glass-panel text-center mb-6">
+            <!-- 【修改部分】增加 ID 方便控制 -->
+            <div id="inputPanel" class="glass-panel text-center mb-6">
                 <input type="text" id="nameInput" placeholder="输入你的名字..." 
                        class="bg-transparent border-b-2 border-pink-300 text-center text-xl w-full focus:outline-none mb-4 py-2">
                 <div id="wishDisplay" class="wish-text">
@@ -171,7 +174,8 @@
         </div>
 
         <!-- 中间：提示信息 -->
-        <div class="text-center text-sm opacity-60">
+        <!-- 【修改部分】增加 ID 方便同步隐退 -->
+        <div id="tipPanel" class="text-center text-sm opacity-60 transition-opacity duration-1000">
             <p>✋ 绽放 | ✊ 聚合 | 👉 挥手变色</p>
             <p class="mt-2 text-xs">建议在光线充足的环境下开启摄像头体验</p>
         </div>
@@ -230,19 +234,16 @@
             const sizes = new Float32Array(particleCount);
 
             for (let i = 0; i < particleCount; i++) {
-                // 圣诞树圆锥形算法
                 const r = Math.pow(Math.random(), 1.5) * 2;
                 const theta = Math.random() * 2 * Math.PI;
-                const h = Math.random() * 4 - 2; // 高度范围 [-2, 2]
+                const h = Math.random() * 4 - 2; 
                 
-                // 随着高度增加，半径缩小 (圆锥效果)
                 const currentRadius = r * (1 - (h + 2) / 4.5);
                 
                 positions[i * 3] = Math.cos(theta) * currentRadius;
                 positions[i * 3 + 1] = h;
                 positions[i * 3 + 2] = Math.sin(theta) * currentRadius;
 
-                // 颜色
                 const color = new THREE.Color(colors[Math.floor(Math.random() * colors.length)]);
                 pColors[i * 3] = color.r;
                 pColors[i * 3 + 1] = color.g;
@@ -274,7 +275,6 @@
             star.position.y = 2.1;
             scene.add(star);
 
-            // 增加光晕
             const spriteMaterial = new THREE.SpriteMaterial({
                 map: createGlowTexture(),
                 color: 0xffffaa,
@@ -315,17 +315,17 @@
         }
         
         /**
-         * 交互逻辑：名字输入与自动消失
+         * 【修改部分】交互逻辑：名字输入与自动消失
          */
         const nameInput = document.getElementById('nameInput');
         const wishDisplay = document.getElementById('wishDisplay');
         const inputPanel = document.getElementById('inputPanel');
-        const actionHint = document.getElementById('actionHint');
+        const tipPanel = document.getElementById('tipPanel');
 
-        // 执行消失动画
+        // 执行消失动画的函数
         function fadeOutUI() {
             inputPanel.classList.add('ui-fade-out');
-            actionHint.classList.add('opacity-0');
+            tipPanel.classList.add('opacity-0'); // 同时让中间提示变透明
         }
 
         nameInput.addEventListener('input', (e) => {
@@ -339,17 +339,17 @@
             }
         });
 
-        // 用户按回车确认完成输入
+        // 监听回车键：按回车即视为输入完成
         nameInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                nameInput.blur(); // 失去焦点
+                nameInput.blur(); // 触发失去焦点事件
             }
         });
 
-        // 失去焦点时启动消失倒计时
+        // 监听失去焦点：用户点开别处或按回车后，3秒启动消失倒计时
         nameInput.addEventListener('blur', () => {
             if (nameInput.value.trim()) {
-                setTimeout(fadeOutUI, 3000); // 3秒后开始渐隐
+                setTimeout(fadeOutUI, 3000); 
             }
         });
         
@@ -359,7 +359,6 @@
         const videoElement = document.getElementById('webcam');
         const startBtn = document.getElementById('startCamera');
         const hint = document.getElementById('gesture-hint');
-        let handsDetected = false;
 
         async function initGesture() {
             const hands = new Hands({
@@ -389,23 +388,18 @@
         function onResults(results) {
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
-                
-                // 1. 判断张开/握拳 (计算食指尖到掌心的距离)
                 const indexFingerTip = landmarks[8];
                 const wrist = landmarks[0];
                 const distance = Math.sqrt(Math.pow(indexFingerTip.x - wrist.x, 2) + Math.pow(indexFingerTip.y - wrist.y, 2));
 
                 if (distance > 0.4) {
-                    // 张开手掌 - 绽放
                     expansionFactor = 2.5;
                     showHint("✋ 绽放：灵感迸发！");
                 } else {
-                    // 握拳 - 聚合
                     expansionFactor = 0.5;
                     showHint("✊ 聚合：温暖凝聚");
                 }
 
-                // 2. 左右挥手变色
                 const currentX = indexFingerTip.x;
                 if (Math.abs(currentX - lastX) > 0.15) {
                     changeTheme();
@@ -431,7 +425,6 @@
             const targetColor = new THREE.Color(colors[currentThemeIndex]);
             
             for (let i = 0; i < particleCount; i++) {
-                // 部分随机混合
                 if(Math.random() > 0.3) {
                     colorAttr.array[i * 3] = targetColor.r;
                     colorAttr.array[i * 3 + 1] = targetColor.g;
@@ -453,49 +446,26 @@
          */
         function animate() {
             requestAnimationFrame(animate);
-            
             const time = Date.now() * 0.001;
-
-            // 圣诞树旋转
             particles.rotation.y += 0.005;
-
-            // 粒子动态效果
             const positions = particles.geometry.attributes.position.array;
             for (let i = 0; i < particleCount; i++) {
-                // 获取原始位置（用于维持形状）
                 const ix = i * 3;
-                const iy = i * 3 + 1;
-                const iz = i * 3 + 2;
-
-                // 基于 expansionFactor 实时缩放
-                // 使用简单的插值平滑缩放
-                const targetScale = expansionFactor;
-                
-                // 呼吸闪烁
                 particles.geometry.attributes.color.array[ix] += Math.sin(time + i) * 0.001;
             }
-            
-            // 实现平滑的缩放动画
             particles.scale.lerp(new THREE.Vector3(expansionFactor, expansionFactor, expansionFactor), 0.1);
-            
-            // 星星呼吸
             star.scale.setScalar(1 + Math.sin(time * 3) * 0.1);
-            
-            // 雪花飘落
             snowflakes.position.y -= 0.01;
             if (snowflakes.position.y < -5) snowflakes.position.y = 5;
-
             renderer.render(scene, camera);
         }
 
-        // 窗口适配
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // 启动
         window.onload = initThree;
     </script>
 </body>
