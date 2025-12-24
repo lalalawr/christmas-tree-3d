@@ -1,152 +1,59 @@
-:root {
-    --christmas-red: #ff2d2d;
-    --christmas-green: #00ff88;
-    --neon-gold: #ffcc00;
-    --ice-blue: #a0f0ff;
-    --dark-bg: #05080a;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
 body {
-    overflow: hidden;
-    background: var(--dark-bg);
-    font-family: 'Noto Sans SC', sans-serif;
-    color: white;
-    height: 100vh;
-    width: 100vw;
+  margin: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at top, #0a1a33, #02030a);
+  font-family: "Segoe UI", "PingFang SC", sans-serif;
+  color: #e6f7ff;
 }
 
-#canvas-container {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 1;
+#ui {
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  top: 28px;
+  text-align: center;
+  pointer-events: auto;
 }
 
-#ui-layer {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 10;
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 20px;
+h1 {
+  font-size: 2.4rem;
+  letter-spacing: 2px;
+  text-shadow: 0 0 24px rgba(180,220,255,0.9);
 }
 
-.greeting-card {
-    pointer-events: auto;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px;
-    padding: 30px;
-    text-align: center;
-    max-width: 450px;
-    margin: 40px auto 0;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+#nameInput {
+  margin-top: 18px;
+  padding: 12px 18px;
+  border-radius: 30px;
+  border: none;
+  font-size: 1rem;
+  width: 240px;
+  text-align: center;
+  outline: none;
+  background: rgba(255,255,255,0.15);
+  color: #e6f7ff;
+  box-shadow: 0 0 18px rgba(180,220,255,0.6);
 }
 
-.card-hidden {
-    opacity: 0;
-    transform: translateY(-50px) scale(0.9);
-    pointer-events: none;
+#blessing {
+  margin-top: 16px;
+  font-size: 1.1rem;
+  color: #bfefff;
+  text-shadow: 0 0 16px rgba(180,220,255,0.9);
 }
 
-input {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid var(--christmas-green);
-    border-radius: 12px;
-    padding: 12px 20px;
-    color: #fff;
-    font-size: 1.1rem;
-    width: 100%;
-    text-align: center;
-    outline: none;
-    margin-bottom: 20px;
+.buttons {
+  margin-top: 18px;
 }
 
-.message {
-    font-family: 'ZCOOL KuaiLe', cursive;
-    font-size: 1.6rem;
-    color: #fff;
-    min-height: 3rem;
-    line-height: 1.4;
-}
-
-.char-pop {
-    display: inline-block;
-    animation: popIn 0.3s forwards;
-    opacity: 0;
-}
-
-@keyframes popIn { to { opacity: 1; transform: scale(1); } }
-
-.controls {
-    pointer-events: auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    padding-bottom: 20px;
-}
-
-.cam-wrapper {
-    width: 120px; height: 90px;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 2px solid var(--ice-blue);
-    background: #000;
-}
-
-video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-
-.loading-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: #0a0e12;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    transition: opacity 1s;
-}
-
-.spinner {
-    width: 50px; height: 50px;
-    border: 3px solid var(--ice-blue);
-    border-top-color: transparent;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.btn-start {
-    margin-top: 30px;
-    padding: 15px 40px;
-    background: linear-gradient(45deg, var(--christmas-red), var(--christmas-green));
-    border: none;
-    border-radius: 30px;
-    color: white;
-    font-size: 1.2rem;
-    font-family: 'ZCOOL KuaiLe', cursive;
-    cursor: pointer;
-    display: none;
-    box-shadow: 0 0 20px rgba(0,255,136,0.3);
-}
-
-.hint-text {
-    text-align: right;
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.6);
-}
-
-#gesture-status {
-    margin-bottom: 10px;
-    color: var(--neon-gold);
-    font-size: 0.8rem;
-    text-shadow: 0 0 5px black;
+button {
+  margin: 6px;
+  padding: 10px 22px;
+  border-radius: 24px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #8fdcff, #e6f7ff);
+  color: #001122;
+  font-weight: bold;
+  box-shadow: 0 0 18px rgba(180,220,255,0.9);
 }
