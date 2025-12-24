@@ -313,12 +313,20 @@
             snowflakes = new THREE.Points(snowGeo, snowMat);
             scene.add(snowflakes);
         }
-
+        
         /**
-         * 2. 交互逻辑：名字输入
+         * 交互逻辑：名字输入与自动消失
          */
         const nameInput = document.getElementById('nameInput');
         const wishDisplay = document.getElementById('wishDisplay');
+        const inputPanel = document.getElementById('inputPanel');
+        const actionHint = document.getElementById('actionHint');
+
+        // 执行消失动画
+        function fadeOutUI() {
+            inputPanel.classList.add('ui-fade-out');
+            actionHint.classList.add('opacity-0');
+        }
 
         nameInput.addEventListener('input', (e) => {
             const name = e.target.value.trim();
@@ -331,6 +339,20 @@
             }
         });
 
+        // 用户按回车确认完成输入
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                nameInput.blur(); // 失去焦点
+            }
+        });
+
+        // 失去焦点时启动消失倒计时
+        nameInput.addEventListener('blur', () => {
+            if (nameInput.value.trim()) {
+                setTimeout(fadeOutUI, 3000); // 3秒后开始渐隐
+            }
+        });
+        
         /**
          * 3. 核心：手势识别 (MediaPipe)
          */
@@ -478,3 +500,4 @@
     </script>
 </body>
 </html>
+
