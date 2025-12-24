@@ -58,6 +58,7 @@
             border-radius: 20px;
             padding: 1.5rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: opacity 2s ease, transform 2s ease, filter 2s ease;
         }
 
         .wish-text {
@@ -72,6 +73,14 @@
             color: rgba(255, 255, 255, 0.5);
         }
 
+        /* 针对自动消失的样式 */
+        .ui-fade-out {
+            opacity: 0 !important;
+            transform: translateY(-30px);
+            filter: blur(10px);
+            pointer-events: none !important;
+        }
+
         /* 摄像头预览窗 */
         #video-container {
             position: absolute;
@@ -83,7 +92,7 @@
             overflow: hidden;
             border: 2px solid rgba(255, 255, 255, 0.3);
             z-index: 20;
-            transform: scaleX(-1); /* 镜像显示 */
+            transform: scaleX(-1);
         }
 
         #gesture-hint {
@@ -99,10 +108,9 @@
             z-index: 20;
         }
 
-        /* 按钮动画 */
         .btn-festive {
             background: linear-gradient(45deg, #ff4d6d, #ff8fa3);
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.5s;
         }
         .btn-festive:hover {
             transform: scale(1.05);
@@ -127,7 +135,6 @@
             to { transform: translateY(10%) rotate(5deg); }
         }
 
-        /* 加载动画 */
         #loader {
             position: fixed;
             inset: 0;
@@ -144,31 +151,31 @@
 
     <div id="loader">
         <div class="text-4xl mb-4">🎄</div>
-        <div class="text-white text-xl animate-pulse">正在点亮圣诞森林...</div>
+        <div class="text-white text-xl animate-pulse">正在准备圣诞魔法...</div>
     </div>
 
     <div class="aurora"></div>
     <div id="canvas-container"></div>
 
     <div class="overlay-ui">
-        <!-- 顶部：输入与祝福 -->
+        <!-- 顶部：名字输入面板 -->
         <div class="w-full max-w-md pointer-events-auto">
-            <div class="glass-panel text-center mb-6">
-                <input type="text" id="nameInput" placeholder="输入你的名字..." 
+            <div id="inputPanel" class="glass-panel text-center mb-6">
+                <input type="text" id="nameInput" placeholder="输入名字并按回车..." 
                        class="bg-transparent border-b-2 border-pink-300 text-center text-xl w-full focus:outline-none mb-4 py-2">
                 <div id="wishDisplay" class="wish-text">
                     🎄 Merry Christmas!
                 </div>
+                <p id="subHint" class="text-xs opacity-50 mt-2">完成输入后，祝福将在片刻后化作星光消失</p>
             </div>
         </div>
 
-        <!-- 中间：提示信息 -->
-        <div class="text-center text-sm opacity-60">
+        <!-- 中间：操作提示 -->
+        <div id="actionHint" class="text-center text-sm opacity-60 transition-opacity duration-1000">
             <p>✋ 绽放 | ✊ 聚合 | 👉 挥手变色</p>
-            <p class="mt-2 text-xs">建议在光线充足的环境下开启摄像头体验</p>
         </div>
 
-        <!-- 底部：控制 -->
+        <!-- 底部：控制按钮 -->
         <div class="pointer-events-auto">
             <button id="startCamera" class="btn-festive px-8 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
                 <span>📸</span> 开启交互模式
@@ -176,7 +183,7 @@
         </div>
     </div>
 
-    <!-- 交互反馈 -->
+    <!-- 交互提示 -->
     <div id="gesture-hint">识别中...</div>
     <div id="video-container">
         <video id="webcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
@@ -188,14 +195,11 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
     <script>
-        /**
-         * 1. 场景初始化 & 圣诞树构建
-         */
-        let scene, camera, renderer, particles, star;
-        const particleCount = 6000;
+        let scene, camera, renderer, particles, star, snowflakes;
+        const particleCount = 6500;
         const colors = [0xff4d6d, 0xffcfdf, 0xffd700, 0x00ff88, 0x00d2ff, 0xbd93f9];
         let currentThemeIndex = 0;
-        let expansionFactor = 1.0; // 手势控制缩放因子
+        let expansionFactor = 1.0;
 
         function initThree() {
             scene = new THREE.Scene();
@@ -204,7 +208,7 @@
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
             createTree();
@@ -212,45 +216,39 @@
             createSnow();
 
             animate();
-            document.getElementById('loader').style.display = 'none';
+            document.getElementById('loader').style.opacity = '0';
+            setTimeout(() => document.getElementById('loader').remove(), 1000);
         }
 
         function createTree() {
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
             const pColors = new Float32Array(particleCount * 3);
-            const sizes = new Float32Array(particleCount);
 
             for (let i = 0; i < particleCount; i++) {
-                // 圣诞树圆锥形算法
                 const r = Math.pow(Math.random(), 1.5) * 2;
                 const theta = Math.random() * 2 * Math.PI;
-                const h = Math.random() * 4 - 2; // 高度范围 [-2, 2]
-                
-                // 随着高度增加，半径缩小 (圆锥效果)
+                const h = Math.random() * 4 - 2;
                 const currentRadius = r * (1 - (h + 2) / 4.5);
                 
                 positions[i * 3] = Math.cos(theta) * currentRadius;
                 positions[i * 3 + 1] = h;
                 positions[i * 3 + 2] = Math.sin(theta) * currentRadius;
 
-                // 颜色
                 const color = new THREE.Color(colors[Math.floor(Math.random() * colors.length)]);
                 pColors[i * 3] = color.r;
                 pColors[i * 3 + 1] = color.g;
                 pColors[i * 3 + 2] = color.b;
-
-                sizes[i] = Math.random() * 0.05 + 0.02;
             }
 
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.BufferAttribute(pColors, 3));
             
             const material = new THREE.PointsMaterial({
-                size: 0.04,
+                size: 0.035,
                 vertexColors: true,
                 transparent: true,
-                opacity: 0.8,
+                opacity: 0.7,
                 blending: THREE.AdditiveBlending,
                 sizeAttenuation: true
             });
@@ -260,62 +258,42 @@
         }
 
         function createStar() {
-            const geometry = new THREE.SphereGeometry(0.15, 16, 16);
+            const geometry = new THREE.SphereGeometry(0.12, 16, 16);
             const material = new THREE.MeshBasicMaterial({ color: 0xffffaa });
             star = new THREE.Mesh(geometry, material);
             star.position.y = 2.1;
             scene.add(star);
-
-            // 增加光晕
-            const spriteMaterial = new THREE.SpriteMaterial({
-                map: createGlowTexture(),
-                color: 0xffffaa,
-                transparent: true,
-                blending: THREE.AdditiveBlending
-            });
-            const sprite = new THREE.Sprite(spriteMaterial);
-            sprite.scale.set(0.8, 0.8, 1);
-            star.add(sprite);
         }
 
-        function createGlowTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 64;
-            canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-            gradient.addColorStop(0, 'rgba(255,255,255,1)');
-            gradient.addColorStop(0.2, 'rgba(255,255,200,0.5)');
-            gradient.addColorStop(1, 'rgba(255,255,200,0)');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 64, 64);
-            const texture = new THREE.CanvasTexture(canvas);
-            return texture;
-        }
-
-        let snowflakes;
         function createSnow() {
             const snowGeo = new THREE.BufferGeometry();
-            const snowPos = new Float32Array(1000 * 3);
-            for(let i=0; i<3000; i++) {
-                snowPos[i] = (Math.random() - 0.5) * 10;
+            const snowPos = new Float32Array(1500 * 3);
+            for(let i=0; i<1500*3; i++) {
+                snowPos[i] = (Math.random() - 0.5) * 12;
             }
             snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
-            const snowMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.02, transparent: true });
-            snowflakes = new THREE.Points(snowGeo, snowMat);
+            snowflakes = new THREE.Points(snowGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.015, transparent: true, opacity: 0.5 }));
             scene.add(snowflakes);
         }
 
         /**
-         * 2. 交互逻辑：名字输入
+         * 交互逻辑：名字输入与自动消失
          */
         const nameInput = document.getElementById('nameInput');
         const wishDisplay = document.getElementById('wishDisplay');
+        const inputPanel = document.getElementById('inputPanel');
+        const actionHint = document.getElementById('actionHint');
+
+        // 执行消失动画
+        function fadeOutUI() {
+            inputPanel.classList.add('ui-fade-out');
+            actionHint.classList.add('opacity-0');
+        }
 
         nameInput.addEventListener('input', (e) => {
             const name = e.target.value.trim();
             if (name) {
-                wishDisplay.innerText = `🎄 Merry Christmas, ${name}！愿你的世界永远闪闪发光 ✨`;
+                wishDisplay.innerText = `🎄 Merry Christmas, ${name}！ ✨`;
                 wishDisplay.style.color = '#ff8fa3';
             } else {
                 wishDisplay.innerText = `🎄 Merry Christmas!`;
@@ -323,13 +301,26 @@
             }
         });
 
+        // 用户按回车确认完成输入
+        nameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                nameInput.blur(); // 失去焦点
+            }
+        });
+
+        // 失去焦点时启动消失倒计时
+        nameInput.addEventListener('blur', () => {
+            if (nameInput.value.trim()) {
+                setTimeout(fadeOutUI, 3000); // 3秒后开始渐隐
+            }
+        });
+
         /**
-         * 3. 核心：手势识别 (MediaPipe)
+         * 手势识别模块
          */
         const videoElement = document.getElementById('webcam');
         const startBtn = document.getElementById('startCamera');
-        const hint = document.getElementById('gesture-hint');
-        let handsDetected = false;
+        const gestureHintBox = document.getElementById('gesture-hint');
 
         async function initGesture() {
             const hands = new Hands({
@@ -345,14 +336,11 @@
 
             hands.onResults(onResults);
 
-            const camera = new Camera(videoElement, {
-                onFrame: async () => {
-                    await hands.send({image: videoElement});
-                },
-                width: 640,
-                height: 480
+            const cameraObj = new Camera(videoElement, {
+                onFrame: async () => { await hands.send({image: videoElement}); },
+                width: 640, height: 480
             });
-            camera.start();
+            cameraObj.start();
         }
 
         let lastX = 0;
@@ -470,3 +458,4 @@
     </script>
 </body>
 </html>
+
