@@ -1,40 +1,69 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <title>Magical Ice Blue Christmas Tree</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- Three.js -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
-  <!-- Postprocessing -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/EffectComposer.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/RenderPass.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-
-  <!-- MediaPipe Hands -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎄 圣诞快乐 | 你的专属粒子祝福树</title>
+    <!-- 引入 Tailwind CSS 用于快速布局 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@300;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-  <div id="ui">
-    <h1>🎄 Merry Christmas</h1>
-    <input id="nameInput" placeholder="输入你的名字" />
-    <div id="blessing">✨ 愿你的世界永远闪闪发光 ✨</div>
 
-    <div class="buttons">
-      <button id="gestureBtn">🎥 手势魔法</button>
-      <button id="shotBtn">📸 保存圣诞树</button>
+    <!-- 加载动画 -->
+    <div id="loader">
+        <div class="text-4xl mb-4">🎄</div>
+        <div class="text-white text-xl animate-pulse">正在点亮圣诞森林...</div>
     </div>
-  </div>
 
-  <audio id="bgm" src="music.mp3" loop></audio>
-  <video id="video" playsinline style="display:none"></video>
+    <!-- 极光背景底层 -->
+    <div class="aurora"></div>
+    
+    <!-- Three.js 容器 -->
+    <div id="canvas-container"></div>
 
-  <script src="script.js"></script>
+    <!-- 交互 UI 层 -->
+    <div class="overlay-ui">
+        <div class="w-full max-w-md pointer-events-auto">
+            <div class="glass-panel text-center mb-6">
+                <input type="text" id="nameInput" placeholder="输入你的名字..." 
+                       class="bg-transparent border-b-2 border-pink-300 text-center text-xl w-full focus:outline-none mb-4 py-2">
+                <div id="wishDisplay" class="wish-text">
+                    🎄 Merry Christmas!
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center text-sm opacity-60">
+            <p>✋ 绽放 | ✊ 聚合 | 👉 挥手变色</p>
+            <p class="mt-2 text-xs">音乐已伴随开启按钮同步播放 🎵</p>
+        </div>
+
+        <div class="pointer-events-auto">
+            <button id="startCamera" class="btn-festive px-8 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
+                <span>📸</span> 开启交互与音乐
+            </button>
+        </div>
+    </div>
+
+    <!-- 手势反馈 -->
+    <div id="gesture-hint">识别中...</div>
+    <div id="video-container">
+        <video id="webcam" autoplay playsinline></video>
+    </div>
+
+    <!-- 背景音乐 (由于无实际mp3文件，此处预留标签，JS中使用了备用音频地址) -->
+    <audio id="bgm" loop>
+        <source src="music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- 依赖库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <!-- 业务逻辑 -->
+    <script src="script.js"></script>
 </body>
 </html>
