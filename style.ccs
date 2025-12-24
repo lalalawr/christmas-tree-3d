@@ -1,534 +1,152 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>圣诞快乐 - 专属你的粒子奇缘</title>
-    <!-- 引入样式 -->
-    <style>
-        :root {
-            --gold: #ffd700;
-            --snow: #ffffff;
-            --xmas-red: #d42426;
-        }
-
-        body,body {
-  margin: 0;
-  overflow: hidden;
-  background: radial-gradient(circle at top, #0b1d3a, #02040f);
-  font-family: "Segoe UI", "PingFang SC", sans-serif;
-  color: #fff;
+:root {
+    --christmas-red: #ff2d2d;
+    --christmas-green: #00ff88;
+    --neon-gold: #ffcc00;
+    --ice-blue: #a0f0ff;
+    --dark-bg: #05080a;
 }
 
-#ui {
-  position: absolute;
-  z-index: 10;
-  width: 100%;
-  top: 30px;
-  text-align: center;
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    overflow: hidden;
+    background: var(--dark-bg);
+    font-family: 'Noto Sans SC', sans-serif;
+    color: white;
+    height: 100vh;
+    width: 100vw;
 }
 
-h1 {
-  font-size: 2.2rem;
-  text-shadow: 0 0 20px rgba(255,255,255,0.6);
+#canvas-container {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 1;
 }
 
-#nameInput {
-  margin-top: 16px;
-  padding: 12px 18px;
-  border-radius: 30px;
-  border: none;
-  font-size: 1rem;
-  width: 240px;
-  text-align: center;
+#ui-layer {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 10;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
 }
 
-#blessing {
-  margin-top: 14px;
-  color: #ffd700;
-  text-shadow: 0 0 12px rgba(255,215,0,0.8);
+.greeting-card {
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    max-width: 450px;
+    margin: 40px auto 0;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.buttons {
-  margin-top: 16px;
+.card-hidden {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+    pointer-events: none;
 }
 
-button {
-  margin: 6px;
-  padding: 10px 20px;
-  border-radius: 24px;
-  border: none;
-  cursor: pointer;
-  background: linear-gradient(135deg, #ff4d4d, #ffcc33);
-  font-weight: bold;
-  box-shadow: 0 0 16px rgba(255,200,50,0.8);
+input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--christmas-green);
+    border-radius: 12px;
+    padding: 12px 20px;
+    color: #fff;
+    font-size: 1.1rem;
+    width: 100%;
+    text-align: center;
+    outline: none;
+    margin-bottom: 20px;
 }
- html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #050505;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-        }
 
-        #canvas-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
+.message {
+    font-family: 'ZCOOL KuaiLe', cursive;
+    font-size: 1.6rem;
+    color: #fff;
+    min-height: 3rem;
+    line-height: 1.4;
+}
 
-        /* 覆盖层：输入框 */
-        #overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 100;
-            transition: opacity 1s ease;
-        }
+.char-pop {
+    display: inline-block;
+    animation: popIn 0.3s forwards;
+    opacity: 0;
+}
 
-        .input-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
-            padding: 40px;
-            border-radius: 24px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            text-align: center;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
-            max-width: 400px;
-            width: 90%;
-        }
+@keyframes popIn { to { opacity: 1; transform: scale(1); } }
 
-        .input-card h1 {
-            color: var(--gold);
-            margin-bottom: 10px;
-            font-weight: 300;
-            letter-spacing: 2px;
-        }
+.controls {
+    pointer-events: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 20px;
+}
 
-        .subtitle {
-            color: #aaa;
-            font-size: 0.9rem;
-            margin-bottom: 30px;
-        }
+.cam-wrapper {
+    width: 120px; height: 90px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--ice-blue);
+    background: #000;
+}
 
-        input {
-            background: rgba(255,255,255,0.05);
-            border: none;
-            border-bottom: 2px solid var(--gold);
-            color: white;
-            font-size: 1.2rem;
-            text-align: center;
-            padding: 12px;
-            width: 80%;
-            outline: none;
-            margin-bottom: 25px;
-            transition: border-color 0.3s;
-        }
+video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
 
-        input:focus {
-            border-bottom-color: var(--xmas-red);
-        }
+.loading-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #0a0e12;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 1s;
+}
 
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+.spinner {
+    width: 50px; height: 50px;
+    border: 3px solid var(--ice-blue);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
 
-        button {
-            background: var(--xmas-red);
-            color: white;
-            border: none;
-            padding: 14px 30px;
-            border-radius: 30px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(212, 36, 38, 0.4);
-        }
+.btn-start {
+    margin-top: 30px;
+    padding: 15px 40px;
+    background: linear-gradient(45deg, var(--christmas-red), var(--christmas-green));
+    border: none;
+    border-radius: 30px;
+    color: white;
+    font-size: 1.2rem;
+    font-family: 'ZCOOL KuaiLe', cursive;
+    cursor: pointer;
+    display: none;
+    box-shadow: 0 0 20px rgba(0,255,136,0.3);
+}
 
-        button:disabled {
-            background: #666;
-            cursor: not-allowed;
-            transform: none;
-        }
+.hint-text {
+    text-align: right;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.6);
+}
 
-        /* 祝福语展示区 */
-        #blessing-container {
-            position: absolute;
-            bottom: 15%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 85%;
-            max-width: 600px;
-            text-align: center;
-            z-index: 50;
-            pointer-events: none;
-        }
-
-        #typewriter {
-            color: white;
-            font-size: 1.3rem;
-            line-height: 1.8;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
-            font-weight: 300;
-        }
-
-        /* 摄像头小窗口 */
-        #video-container {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 140px;
-            height: 105px;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 2px solid rgba(255, 215, 0, 0.5);
-            z-index: 10;
-            background: #000;
-            display: none;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            color: var(--gold);
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 215, 0, 0.3);
-            border-top: 4px solid var(--gold);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
-</head>
-<body>
-
-    <div id="canvas-container"></div>
-
-    <div id="overlay">
-        <div class="input-card">
-            <h1>璀璨圣诞夜</h1>
-            <div class="subtitle">AI 为你捕捉那一抹星光</div>
-            <input type="text" id="nameInput" placeholder="请输入你的名字" maxlength="10">
-            <div class="btn-group">
-                <button id="startBtn" onclick="generateAIBlessing()">
-                    ✨ 生成 AI 专属祝福
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div id="loading" class="loading-overlay">
-        <div class="spinner"></div>
-        <div id="loadingText">正在向北极星许愿...</div>
-    </div>
-
-    <div id="blessing-container">
-        <div id="typewriter"></div>
-    </div>
-
-    <div id="video-container">
-        <video id="input_video" autoplay playsinline></video>
-    </div>
-
-    <!-- 脚本引入 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://unpkg.com/typewriter-effect@latest/dist/core.js"></script>
-
-    <script>
-        const apiKey = ""; // 运行时由环境提供
-        let scene, camera, renderer, particles, star, snowflakes;
-        let particleCount = 5000;
-        let treeGeometry;
-        let mouseX = 0, mouseY = 0;
-        let handX = 0.5, handY = 0.5, handDetected = false;
-
-        // --- 1. Three.js 核心逻辑 ---
-        function initThree() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 5;
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-            const positions = [];
-            const colors = [];
-            for (let i = 0; i < particleCount; i++) {
-                const y = Math.random() * 4 - 2;
-                const radius = (2 - y) * 0.45;
-                const angle = Math.random() * Math.PI * 2;
-                positions.push(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
-
-                const color = new THREE.Color();
-                const r = Math.random();
-                if (r > 0.96) color.setHex(0xffd700);
-                else if (r > 0.9) color.setHex(0xffffff);
-                else color.setHex(0x1a5e20);
-                colors.push(color.r, color.g, color.b);
-            }
-
-            treeGeometry = new THREE.BufferGeometry();
-            treeGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-            treeGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-            
-            const treeMaterial = new THREE.PointsMaterial({
-                size: 0.04,
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.9,
-                blending: THREE.AdditiveBlending
-            });
-
-            particles = new THREE.Points(treeGeometry, treeMaterial);
-            scene.add(particles);
-
-            const starGeo = new THREE.OctahedronGeometry(0.18, 0);
-            const starMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
-            star = new THREE.Mesh(starGeo, starMat);
-            star.position.y = 2.15;
-            scene.add(star);
-
-            const snowPos = [];
-            for(let i=0; i<1200; i++) snowPos.push((Math.random()-0.5)*15, Math.random()*15, (Math.random()-0.5)*15);
-            const snowGeo = new THREE.BufferGeometry();
-            snowGeo.setAttribute('position', new THREE.Float32BufferAttribute(snowPos, 3));
-            snowflakes = new THREE.Points(snowGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.03, transparent: true, opacity: 0.6 }));
-            scene.add(snowflakes);
-
-            window.addEventListener('resize', onWindowResize);
-            document.addEventListener('mousemove', e => { mouseX = (e.clientX/window.innerWidth)*2-1; mouseY = -(e.clientY/window.innerHeight)*2+1; });
-            document.addEventListener('touchmove', e => { if(e.touches[0]) { mouseX = (e.touches[0].clientX/window.innerWidth)*2-1; mouseY = -(e.touches[0].clientY/window.innerHeight)*2+1; }});
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const time = Date.now() * 0.001;
-            particles.rotation.y += 0.003;
-            
-            const posAttr = treeGeometry.attributes.position;
-            const targetX = handDetected ? (handX * 2 - 1) * 4 : mouseX * 4;
-            const targetY = handDetected ? (-(handY * 2 - 1)) * 4 : mouseY * 4;
-
-            for (let i = 0; i < particleCount; i++) {
-                let px = posAttr.getX(i);
-                let py = posAttr.getY(i);
-                const dx = px - targetX;
-                const dy = py - targetY;
-                const dist = dx*dx + dy*dy;
-                if (dist < 0.3) {
-                    posAttr.setX(i, px + dx * 0.05);
-                    posAttr.setY(i, py + dy * 0.05);
-                }
-            }
-            posAttr.needsUpdate = true;
-            snowflakes.position.y -= 0.015;
-            if (snowflakes.position.y < -7) snowflakes.position.y = 7;
-            star.rotation.y += 0.02;
-            star.scale.setScalar(1 + Math.sin(time*4)*0.2);
-            renderer.render(scene, camera);
-        }
-
-        // --- 2. Gemini API 核心功能 ---
-
-        async function fetchGeminiContent(prompt) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: { parts: [{ text: "你是一位富有诗意的圣诞老人，请根据用户的名字写一段充满暖意、梦幻、100字左右的圣诞祝福。包含星星、雪花、粒子等元素，语气温和友好。" }] }
-            };
-
-            let delay = 1000;
-            for (let i = 0; i < 5; i++) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!response.ok) throw new Error('Retry');
-                    const data = await response.json();
-                    return data.candidates?.[0]?.content?.parts?.[0]?.text;
-                } catch (e) {
-                    if (i === 4) throw e;
-                    await new Promise(r => setTimeout(r, delay));
-                    delay *= 2;
-                }
-            }
-        }
-
-        async function speakBlessing(text) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: `Say warmly and cheerfully: ${text}` }] }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } }
-                }
-            };
-
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await response.json();
-                const base64Audio = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-                if (base64Audio) {
-                    playPCM(base64Audio);
-                }
-            } catch (e) {
-                console.error("TTS failed", e);
-            }
-        }
-
-        // PCM 16bit to WAV 简易转换并播放
-        function playPCM(base64) {
-            const binaryString = atob(base64);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
-            
-            const wavHeader = new ArrayBuffer(44);
-            const view = new DataView(wavHeader);
-            const sampleRate = 24000; // 假设采样率
-
-            view.setUint32(0, 0x46464952, true); // RIFF
-            view.setUint32(4, 36 + len, true);
-            view.setUint32(8, 0x45564157, true); // WAVE
-            view.setUint32(12, 0x20746d66, true); // fmt 
-            view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true); // PCM
-            view.setUint16(22, 1, true); // Mono
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * 2, true);
-            view.setUint16(32, 2, true);
-            view.setUint16(34, 16, true);
-            view.setUint32(36, 0x61746164, true); // data
-            view.setUint32(40, len, true);
-
-            const blob = new Blob([wavHeader, bytes], { type: 'audio/wav' });
-            const audio = new Audio(URL.createObjectURL(blob));
-            audio.play();
-        }
-
-        // --- 3. 交互流程控制 ---
-
-        async function generateAIBlessing() {
-            const name = document.getElementById('nameInput').value.trim() || "亲爱的朋友";
-            const loading = document.getElementById('loading');
-            loading.style.display = 'flex';
-
-            try {
-                const blessingText = await fetchGeminiContent(`收件人：${name}。请写一段暖心的圣诞祝福。`);
-                loading.style.display = 'none';
-                startExperience(name, blessingText);
-            } catch (err) {
-                console.error(err);
-                loading.style.display = 'none';
-                startExperience(name, `亲爱的${name}，圣诞快乐！愿这璀璨的星光带给你一整年的好运。`);
-            }
-        }
-
-        function startExperience(name, text) {
-            document.getElementById('overlay').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('overlay').style.display = 'none';
-                document.getElementById('video-container').style.display = 'block';
-                
-                // 打字机效果
-                new Typewriter('#typewriter', {
-                    strings: [text],
-                    autoStart: true,
-                    delay: 50,
-                    cursor: '✨'
-                });
-
-                // 语音播报
-                speakBlessing(text);
-                
-                // 启动手势
-                initHandTracking();
-            }, 1000);
-        }
-
-        function initHandTracking() {
-            const videoElement = document.getElementById('input_video');
-            const hands = new Hands({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-            });
-
-            hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5 });
-            hands.onResults((results) => {
-                if (results.multiHandLandmarks?.length > 0) {
-                    handDetected = true;
-                    const tip = results.multiHandLandmarks[0][8]; // 食指
-                    handX = tip.x; handY = tip.y;
-                } else handDetected = false;
-            });
-
-            const cameraPipe = new Camera(videoElement, {
-                onFrame: async () => { await hands.send({ image: videoElement }); },
-                width: 640, height: 480
-            });
-            cameraPipe.start();
-        }
-
-        window.onload = () => { initThree(); animate(); };
-    </script>
-</body>
-</html>
+#gesture-status {
+    margin-bottom: 10px;
+    color: var(--neon-gold);
+    font-size: 0.8rem;
+    text-shadow: 0 0 5px black;
+}
